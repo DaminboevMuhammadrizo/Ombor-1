@@ -1,4 +1,3 @@
-// src/app/zapchastlar/page.tsx
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -9,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, Edit, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { readJsonFile, writeJsonFile, deleteFromFile, updateInFile } from '@/lib/json-utils';
 
 interface Zapchast {
     id: number;
@@ -17,7 +17,7 @@ interface Zapchast {
     soni: number;
     narxi: number;
     kelgan_sanasi: string;
-    createdAt: string;
+    created_at: string;
 }
 
 interface FormattedZapchast extends Zapchast {
@@ -31,7 +31,7 @@ export default function ZapchastlarPage() {
     const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    const [newPart, setNewPart] = useState<Partial<Zapchast>>({
+    const [newPart, setNewPart] = useState({
         nomi: '',
         kod: '',
         soni: 0,
@@ -39,13 +39,13 @@ export default function ZapchastlarPage() {
         kelgan_sanasi: new Date().toISOString().split('T')[0]
     });
     const [editPart, setEditPart] = useState<FormattedZapchast | null>(null);
-    const [originalEditPart, setOriginalEditPart] = useState<FormattedZapchast | null>(null); // ✅ Asl ma'lumot
+    const [originalEditPart, setOriginalEditPart] = useState<FormattedZapchast | null>(null);
     const [deletePart, setDeletePart] = useState<FormattedZapchast | null>(null);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
-    // GET - Ma'lumotlarni serverdan olish
+    // GET - Ma'lumotlarni Supabase dan olish
     useEffect(() => {
         fetchZapchastlar();
     }, []);
@@ -53,10 +53,7 @@ export default function ZapchastlarPage() {
     const fetchZapchastlar = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/zapchastlar');
-            if (!response.ok) throw new Error('Ma\'lumotlarni olishda xatolik');
-
-            const data: Zapchast[] = await response.json();
+            const data = await readJsonFile('zapchastlar.json');
             const formattedParts = data.map((part: Zapchast) => ({
                 ...part,
                 formattedDate: new Date(part.kelgan_sanasi).toLocaleDateString('uz-UZ'),
@@ -99,11 +96,11 @@ export default function ZapchastlarPage() {
 
     // CREATE - Yangi zapchast qo'shish
     const handleAddPart = async (): Promise<void> => {
-        if (!newPart.nomi?.trim()) {
+        if (!newPart.nomi.trim()) {
             setError('Zapchast nomini kiriting');
             return;
         }
-        if (!newPart.kod?.trim()) {
+        if (!newPart.kod.trim()) {
             setError('Zapchast kodini kiriting');
             return;
         }
@@ -111,34 +108,25 @@ export default function ZapchastlarPage() {
             setError('Bu zapchast kodi allaqachon mavjud');
             return;
         }
-        if (!newPart.soni || newPart.soni < 0) {
+        if (newPart.soni < 0) {
             setError('Zapchast sonini kiriting');
             return;
         }
-        if (!newPart.narxi || newPart.narxi < 0) {
+        if (newPart.narxi < 0) {
             setError('Zapchast narxini kiriting');
             return;
         }
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/zapchastlar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    nomi: newPart.nomi.trim(),
-                    kod: newPart.kod.trim(),
-                    soni: newPart.soni,
-                    narxi: newPart.narxi,
-                    kelgan_sanasi: newPart.kelgan_sanasi
-                }),
+            const newZapchast = await writeJsonFile('zapchastlar.json', {
+                nomi: newPart.nomi.trim(),
+                kod: newPart.kod.trim(),
+                soni: newPart.soni,
+                narxi: newPart.narxi,
+                kelgan_sanasi: newPart.kelgan_sanasi
             });
 
-            if (!response.ok) throw new Error('Zapchast qo\'shishda xatolik');
-
-            const newZapchast: Zapchast = await response.json();
             const formattedPart: FormattedZapchast = {
                 ...newZapchast,
                 formattedDate: new Date(newZapchast.kelgan_sanasi).toLocaleDateString('uz-UZ'),
@@ -158,9 +146,9 @@ export default function ZapchastlarPage() {
             });
             setError('');
             setIsAddDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Zapchast qo\'shishda xatolik');
+            setError(error.message || 'Zapchast qo\'shishda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -183,11 +171,11 @@ export default function ZapchastlarPage() {
             setError('Bu zapchast kodi allaqachon mavjud');
             return;
         }
-        if (!editPart.soni || editPart.soni < 0) {
+        if (editPart.soni < 0) {
             setError('Zapchast sonini kiriting');
             return;
         }
-        if (!editPart.narxi || editPart.narxi < 0) {
+        if (editPart.narxi < 0) {
             setError('Zapchast narxini kiriting');
             return;
         }
@@ -200,24 +188,14 @@ export default function ZapchastlarPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/zapchastlar', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id: editPart.id,
-                    nomi: editPart.nomi.trim(),
-                    kod: editPart.kod.trim(),
-                    soni: editPart.soni,
-                    narxi: editPart.narxi,
-                    kelgan_sanasi: editPart.kelgan_sanasi
-                }),
+            const updatedZapchast = await updateInFile('zapchastlar.json', editPart.id, {
+                nomi: editPart.nomi.trim(),
+                kod: editPart.kod.trim(),
+                soni: editPart.soni,
+                narxi: editPart.narxi,
+                kelgan_sanasi: editPart.kelgan_sanasi
             });
 
-            if (!response.ok) throw new Error('Zapchastni yangilashda xatolik');
-
-            const updatedZapchast: Zapchast = await response.json();
             const formattedPart: FormattedZapchast = {
                 ...updatedZapchast,
                 formattedDate: new Date(updatedZapchast.kelgan_sanasi).toLocaleDateString('uz-UZ'),
@@ -235,9 +213,9 @@ export default function ZapchastlarPage() {
             setOriginalEditPart(null);
             setError('');
             setIsEditDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Zapchastni yangilashda xatolik');
+            setError(error.message || 'Zapchastni yangilashda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -249,22 +227,14 @@ export default function ZapchastlarPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/zapchastlar', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id: deletePart.id }),
-            });
-
-            if (!response.ok) throw new Error('Zapchastni o\'chirishda xatolik');
+            await deleteFromFile('zapchastlar.json', deletePart.id);
 
             setZapchastlar(prev => prev.filter(p => p.id !== deletePart.id));
             setDeletePart(null);
             setIsDeleteDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Zapchastni o\'chirishda xatolik');
+            setError(error.message || 'Zapchastni o\'chirishda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -273,7 +243,7 @@ export default function ZapchastlarPage() {
     // Tahrirlashni boshlash
     const handleEditClick = (part: FormattedZapchast): void => {
         setEditPart({ ...part });
-        setOriginalEditPart({ ...part }); // ✅ Asl ma'lumotni saqlaymiz
+        setOriginalEditPart({ ...part });
         setError('');
         setIsEditDialogOpen(true);
     };
@@ -297,7 +267,7 @@ export default function ZapchastlarPage() {
     };
 
     // Input o'zgarishlari uchun handlerlar
-    const handleNewPartChange = (field: keyof Zapchast, value: string | number): void => {
+    const handleNewPartChange = (field: keyof typeof newPart, value: string | number): void => {
         setNewPart(prev => ({
             ...prev,
             [field]: value
@@ -443,7 +413,7 @@ export default function ZapchastlarPage() {
                                 </Button>
                                 <Button
                                     type="submit"
-                                    disabled={!newPart.nomi || !newPart.kod || !newPart.soni || !newPart.narxi || actionLoading}
+                                    disabled={!newPart.nomi || !newPart.kod || newPart.soni < 0 || newPart.narxi < 0 || actionLoading}
                                 >
                                     {actionLoading ? (
                                         <>
@@ -509,7 +479,7 @@ export default function ZapchastlarPage() {
                                         type="number"
                                         min="0"
                                         placeholder="0"
-                                        value={editPart?.soni ?? 0} // ✅ Null coalescing
+                                        value={editPart?.soni ?? 0}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                             handleEditPartChange('soni', parseInt(e.target.value) || 0)
                                         }
@@ -524,7 +494,7 @@ export default function ZapchastlarPage() {
                                         step="0.01"
                                         min="0"
                                         placeholder="0.00"
-                                        value={editPart?.narxi ?? 0} // ✅ Null coalescing
+                                        value={editPart?.narxi ?? 0}
                                         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                             handleEditPartChange('narxi', parseFloat(e.target.value) || 0)
                                         }
@@ -537,7 +507,7 @@ export default function ZapchastlarPage() {
                                 <Input
                                     id="editKelgan_sanasi"
                                     type="date"
-                                    value={editPart?.kelgan_sanasi?.split('T')[0] || new Date().toISOString().split('T')[0]} // ✅ Null safety
+                                    value={editPart?.kelgan_sanasi?.split('T')[0] || new Date().toISOString().split('T')[0]}
                                     onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
                                         handleEditPartChange('kelgan_sanasi', e.target.value)
                                     }
@@ -566,10 +536,10 @@ export default function ZapchastlarPage() {
                                 disabled={
                                     !editPart?.nomi ||
                                     !editPart?.kod ||
-                                    !editPart?.soni ||
-                                    !editPart?.narxi ||
+                                    (editPart?.soni ?? 0) < 0 ||
+                                    (editPart?.narxi ?? 0) < 0 ||
                                     actionLoading ||
-                                    !hasChanges() // ✅ O'zgarishlar mavjud bo'lishi kerak
+                                    !hasChanges()
                                 }
                             >
                                 {actionLoading ? (
@@ -651,7 +621,7 @@ export default function ZapchastlarPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-20 font-semibold text-base">ID</TableHead>
+                                <TableHead className="w-20 font-semibold text-base">T/R</TableHead>
                                 <TableHead className="font-semibold text-base">Nomi</TableHead>
                                 <TableHead className="w-24 font-semibold text-base">Kodi</TableHead>
                                 <TableHead className="w-28 text-center font-semibold text-base">Soni</TableHead>
@@ -668,9 +638,9 @@ export default function ZapchastlarPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredParts.map((part: FormattedZapchast) => (
+                                filteredParts.map((part: FormattedZapchast, index) => (
                                     <TableRow key={part.id} className="hover:bg-gray-50">
-                                        <TableCell className="font-medium py-3 text-base">{part.id}</TableCell>
+                                        <TableCell className="font-medium py-3 text-base">{index + 1}</TableCell>
                                         <TableCell className="font-semibold py-3 text-base">{part.nomi}</TableCell>
                                         <TableCell className="py-3 text-base">{part.kod}</TableCell>
                                         <TableCell className="text-center py-3">

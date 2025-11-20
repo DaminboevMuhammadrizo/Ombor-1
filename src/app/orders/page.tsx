@@ -1,4 +1,3 @@
-// src/app/tamirlash/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, Edit, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { readJsonFile, writeJsonFile, deleteFromFile, updateInFile } from '@/lib/json-utils';
 
 interface Order {
     id: number;
@@ -18,7 +18,7 @@ interface Order {
     sanasi: string;
     zapchast_soni: number;
     zapchast_kod: string;
-    createdAt: string;
+    created_at: string;
 }
 
 interface Mashina {
@@ -71,10 +71,7 @@ export default function TamirlashPage() {
     const fetchOrders = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/orders');
-            if (!response.ok) throw new Error('Buyurtmalarni olishda xatolik');
-
-            const data: Order[] = await response.json();
+            const data = await readJsonFile('servislar.json');
             setOrders(data);
         } catch (error) {
             console.error('Xatolik:', error);
@@ -86,10 +83,7 @@ export default function TamirlashPage() {
 
     const fetchMashinalar = async () => {
         try {
-            const response = await fetch('/api/mashinalar');
-            if (!response.ok) throw new Error('Mashinalarni olishda xatolik');
-
-            const data: Mashina[] = await response.json();
+            const data = await readJsonFile('moshinalar.json');
             setMashinalar(data);
         } catch (error) {
             console.error('Xatolik:', error);
@@ -98,10 +92,7 @@ export default function TamirlashPage() {
 
     const fetchZapchastlar = async () => {
         try {
-            const response = await fetch('/api/zapchastlar');
-            if (!response.ok) throw new Error('Zapchastlarni olishda xatolik');
-
-            const data: Zapchast[] = await response.json();
+            const data = await readJsonFile('zapchastlar.json');
             setZapchastlar(data);
         } catch (error) {
             console.error('Xatolik:', error);
@@ -117,28 +108,21 @@ export default function TamirlashPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    moshina_nomeri: formData.moshina_nomeri,
-                    description: formData.description,
-                    usta_haqi: formData.usta_haqi ? parseFloat(formData.usta_haqi) : undefined,
-                    sanasi: formData.sanasi || new Date().toISOString(),
-                    zapchast_soni: parseInt(formData.zapchast_soni) || 0,
-                    zapchast_kod: formData.zapchast_kod
-                })
+            const newOrder = await writeJsonFile('servislar.json', {
+                moshina_nomeri: formData.moshina_nomeri,
+                description: formData.description,
+                usta_haqi: formData.usta_haqi ? parseFloat(formData.usta_haqi) : 0,
+                sanasi: formData.sanasi || new Date().toISOString().split('T')[0],
+                zapchast_soni: parseInt(formData.zapchast_soni) || 0,
+                zapchast_kod: formData.zapchast_kod
             });
 
-            if (!response.ok) throw new Error('Buyurtma qo\'shishda xatolik');
-
-            const newOrder: Order = await response.json();
             setOrders(prev => [...prev, newOrder]);
             resetForm();
             setIsAddDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Buyurtma qo\'shishda xatolik');
+            setError(error.message || 'Buyurtma qo\'shishda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -153,29 +137,21 @@ export default function TamirlashPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/orders', {
-                method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    id,
-                    moshina_nomeri: formData.moshina_nomeri,
-                    description: formData.description,
-                    usta_haqi: formData.usta_haqi ? parseFloat(formData.usta_haqi) : undefined,
-                    sanasi: formData.sanasi,
-                    zapchast_soni: parseInt(formData.zapchast_soni) || 0,
-                    zapchast_kod: formData.zapchast_kod
-                })
+            const updatedOrder = await updateInFile('servislar.json', id, {
+                moshina_nomeri: formData.moshina_nomeri,
+                description: formData.description,
+                usta_haqi: formData.usta_haqi ? parseFloat(formData.usta_haqi) : 0,
+                sanasi: formData.sanasi,
+                zapchast_soni: parseInt(formData.zapchast_soni) || 0,
+                zapchast_kod: formData.zapchast_kod
             });
 
-            if (!response.ok) throw new Error('Buyurtmani yangilashda xatolik');
-
-            const updatedOrder: Order = await response.json();
             setOrders(prev => prev.map(order => order.id === id ? updatedOrder : order));
             resetForm();
             setIsEditDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Buyurtmani yangilashda xatolik');
+            setError(error.message || 'Buyurtmani yangilashda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -187,20 +163,14 @@ export default function TamirlashPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/orders', {
-                method: 'DELETE',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ id: deleteOrder.id })
-            });
-
-            if (!response.ok) throw new Error('Buyurtmani o\'chirishda xatolik');
+            await deleteFromFile('servislar.json', deleteOrder.id);
 
             setOrders(prev => prev.filter(order => order.id !== deleteOrder.id));
             setDeleteOrder(null);
             setIsDeleteDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Buyurtmani o\'chirishda xatolik');
+            setError(error.message || 'Buyurtmani o\'chirishda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -340,12 +310,6 @@ export default function TamirlashPage() {
                                             value={formData.usta_haqi}
                                             onChange={(e) => setFormData({ ...formData, usta_haqi: e.target.value })}
                                             className="w-full"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                    e.preventDefault();
-                                                    createOrder();
-                                                }
-                                            }}
                                         />
                                     </div>
 
@@ -359,12 +323,6 @@ export default function TamirlashPage() {
                                             value={formData.zapchast_soni}
                                             onChange={(e) => setFormData({ ...formData, zapchast_soni: e.target.value })}
                                             className="w-full"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                    e.preventDefault();
-                                                    createOrder();
-                                                }
-                                            }}
                                         />
                                     </div>
 
@@ -377,12 +335,6 @@ export default function TamirlashPage() {
                                             value={formData.sanasi}
                                             onChange={(e) => setFormData({ ...formData, sanasi: e.target.value })}
                                             className="w-full"
-                                            onKeyDown={(e) => {
-                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                    e.preventDefault();
-                                                    createOrder();
-                                                }
-                                            }}
                                         />
                                     </div>
                                 </div>
@@ -398,12 +350,6 @@ export default function TamirlashPage() {
                                         rows={3}
                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                         required
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && !e.shiftKey && formData.moshina_nomeri && formData.description) {
-                                                e.preventDefault();
-                                                createOrder();
-                                            }
-                                        }}
                                     />
                                 </div>
 
@@ -425,7 +371,7 @@ export default function TamirlashPage() {
                                     Bekor qilish
                                 </Button>
                                 <Button
-                                    type="submit" // type ni "submit" qilish
+                                    type="submit"
                                     disabled={!formData.moshina_nomeri || !formData.description || actionLoading}
                                 >
                                     {actionLoading ? (
@@ -507,12 +453,6 @@ export default function TamirlashPage() {
                                         value={formData.usta_haqi}
                                         onChange={(e) => setFormData({ ...formData, usta_haqi: e.target.value })}
                                         className="w-full"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                e.preventDefault();
-                                                updateOrder(editingId!);
-                                            }
-                                        }}
                                     />
                                 </div>
 
@@ -526,12 +466,6 @@ export default function TamirlashPage() {
                                         value={formData.zapchast_soni}
                                         onChange={(e) => setFormData({ ...formData, zapchast_soni: e.target.value })}
                                         className="w-full"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                e.preventDefault();
-                                                updateOrder(editingId!);
-                                            }
-                                        }}
                                     />
                                 </div>
 
@@ -544,12 +478,6 @@ export default function TamirlashPage() {
                                         value={formData.sanasi}
                                         onChange={(e) => setFormData({ ...formData, sanasi: e.target.value })}
                                         className="w-full"
-                                        onKeyDown={(e) => {
-                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
-                                                e.preventDefault();
-                                                updateOrder(editingId!);
-                                            }
-                                        }}
                                     />
                                 </div>
                             </div>
@@ -565,12 +493,6 @@ export default function TamirlashPage() {
                                     rows={3}
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter' && !e.shiftKey && formData.moshina_nomeri && formData.description) {
-                                            e.preventDefault();
-                                            updateOrder(editingId!);
-                                        }
-                                    }}
                                 />
                             </div>
 
@@ -592,7 +514,7 @@ export default function TamirlashPage() {
                                 Bekor qilish
                             </Button>
                             <Button
-                                type="submit" // type ni "submit" qilish
+                                type="submit"
                                 disabled={!formData.moshina_nomeri || !formData.description || actionLoading}
                             >
                                 {actionLoading ? (
@@ -687,7 +609,7 @@ export default function TamirlashPage() {
                     <Table>
                         <TableHeader>
                             <TableRow>
-                                <TableHead className="w-20 font-semibold text-base">ID</TableHead>
+                                <TableHead className="w-20 font-semibold text-base">T/R</TableHead>
                                 <TableHead className="font-semibold text-base">Mashina</TableHead>
                                 <TableHead className="font-semibold text-base">Tavsif</TableHead>
                                 <TableHead className="w-28 font-semibold text-base">Usta haqi</TableHead>
@@ -704,9 +626,9 @@ export default function TamirlashPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredOrders.map((order) => (
+                                filteredOrders.map((order, index) => (
                                     <TableRow key={order.id} className="hover:bg-gray-50">
-                                        <TableCell className="font-medium py-3 text-base">{order.id}</TableCell>
+                                        <TableCell className="font-medium py-3 text-base">{index + 1}</TableCell>
                                         <TableCell className="font-semibold py-3 text-base">{order.moshina_nomeri}</TableCell>
                                         <TableCell className="py-3 text-base">
                                             <div className="max-w-xs" title={order.description}>

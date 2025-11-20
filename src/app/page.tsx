@@ -2,16 +2,37 @@
 
 import { Car, Wrench, Hammer } from 'lucide-react';
 import { useState, useEffect } from 'react';
-
-// JSON fayllarni import qilamiz
-import carsData from '@/data/mashinalar.json';
-import sparePartsData from '@/data/zapchastlar.json';
-import ordersData from '@/data/orders.json';
+import { readJsonFile } from '@/lib/json-utils';
 
 interface StatsData {
     totalCars: number;
     totalSpareParts: number;
     totalOrders: number;
+}
+
+interface CarType {
+    id: number;
+    moshina_nomeri: string;
+    created_at: string;
+}
+
+interface SparePartType {
+    id: number;
+    nomi: string;
+    kod: string;
+    soni: number;
+    narxi: number;
+    kelgan_sanasi: string;
+}
+
+interface OrderType {
+    id: number;
+    moshina_nomeri: string;
+    description: string;
+    usta_haqi: number;
+    sanasi: string;
+    zapchast_soni: number;
+    zapchast_kod: string;
 }
 
 export default function Home() {
@@ -20,21 +41,43 @@ export default function Home() {
         totalSpareParts: 0,
         totalOrders: 0
     });
+    const [carsData, setCarsData] = useState<CarType[]>([]);
+    const [sparePartsData, setSparePartsData] = useState<SparePartType[]>([]);
+    const [ordersData, setOrdersData] = useState<OrderType[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        // Statistikani hisoblash
-        const totalCars = carsData.length;
-        const totalSpareParts = sparePartsData.length;
-        const totalOrders = ordersData.length;
-
-        setStats({
-            totalCars,
-            totalSpareParts,
-            totalOrders
-        });
-        setLoading(false);
+        loadDashboardData();
     }, []);
+
+    const loadDashboardData = async () => {
+        try {
+            setLoading(true);
+
+            // Barcha ma'lumotlarni bir vaqtda yuklash
+            const [cars, spareParts, orders] = await Promise.all([
+                readJsonFile('moshinalar.json'),
+                readJsonFile('zapchastlar.json'),
+                readJsonFile('servislar.json')
+            ]);
+
+            setCarsData(cars);
+            setSparePartsData(spareParts);
+            setOrdersData(orders);
+
+            // Statistikani hisoblash
+            setStats({
+                totalCars: cars.length,
+                totalSpareParts: spareParts.length,
+                totalOrders: orders.length
+            });
+
+        } catch (error) {
+            console.error('Dashboard maʼlumotlarini yuklashda xatolik:', error);
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const statsData = [
         {
@@ -127,7 +170,7 @@ export default function Home() {
                                 <div className="flex-1">
                                     <p className="font-medium text-gray-900">Mashina: {order.moshina_nomeri}</p>
                                     <p className="text-sm text-gray-600 line-clamp-2">{order.description}</p>
-                                    {order.usta_haqi && (
+                                    {order.usta_haqi && order.usta_haqi > 0 && (
                                         <p className="text-sm text-green-600 font-medium mt-1">
                                             Usta haqi: ${order.usta_haqi}
                                         </p>
@@ -170,6 +213,16 @@ export default function Home() {
                         )}
                     </div>
                 </div>
+            </div>
+
+            {/* Yangilash tugmasi */}
+            <div className="mt-6 flex justify-center">
+                <button
+                    onClick={loadDashboardData}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors"
+                >
+                    Ma'lumotlarni Yangilash
+                </button>
             </div>
         </div>
     );

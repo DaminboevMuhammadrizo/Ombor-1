@@ -8,11 +8,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, Search, Edit, Trash2, AlertCircle, Loader2 } from 'lucide-react';
+import { readJsonFile, writeJsonFile, deleteFromFile } from '@/lib/json-utils';
 
 interface Mashina {
     id: number;
     moshina_nomeri: string;
-    createdAt: string;
+    created_at: string;
 }
 
 interface FormattedMashina extends Mashina {
@@ -32,7 +33,7 @@ export default function MashinalarPage() {
     const [loading, setLoading] = useState(false);
     const [actionLoading, setActionLoading] = useState(false);
 
-    // GET - Mashinalarni serverdan olish
+    // GET - Mashinalarni Supabase dan olish
     useEffect(() => {
         fetchMashinalar();
     }, []);
@@ -40,13 +41,10 @@ export default function MashinalarPage() {
     const fetchMashinalar = async () => {
         setLoading(true);
         try {
-            const response = await fetch('/api/mashinalar');
-            if (!response.ok) throw new Error('Ma\'lumotlarni olishda xatolik');
-
-            const data: Mashina[] = await response.json();
-            const formattedMashinalar = data.map(mashina => ({
+            const data = await readJsonFile('moshinalar.json');
+            const formattedMashinalar = data.map((mashina: Mashina) => ({
                 ...mashina,
-                formattedDate: new Date(mashina.createdAt).toLocaleDateString('uz-UZ')
+                formattedDate: new Date(mashina.created_at).toLocaleDateString('uz-UZ')
             }));
             setMashinalar(formattedMashinalar);
         } catch (error) {
@@ -82,37 +80,28 @@ export default function MashinalarPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/mashinalar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    moshina_nomeri: newCarNumber
-                }),
+            const newMashina = await writeJsonFile('moshinalar.json', {
+                moshina_nomeri: newCarNumber
             });
 
-            if (!response.ok) throw new Error('Mashina qo\'shishda xatolik');
-
-            const newMashina: Mashina = await response.json();
             const formattedMashina: FormattedMashina = {
                 ...newMashina,
-                formattedDate: new Date(newMashina.createdAt).toLocaleDateString('uz-UZ')
+                formattedDate: new Date(newMashina.created_at).toLocaleDateString('uz-UZ')
             };
 
             setMashinalar(prev => [...prev, formattedMashina]);
             setNewCarNumber('');
             setError('');
             setIsAddDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Mashina qo\'shishda xatolik');
+            setError(error.message || 'Mashina qo\'shishda xatolik');
         } finally {
             setActionLoading(false);
         }
     };
 
-    // PUT - Mashinani tahrirlash
+    // PUT - Mashinani tahrirlash - YANGILANDI
     const handleEditCar = async () => {
         if (!editMashina || !editMashina.moshina_nomeri.trim()) {
             setError('Mashina raqamini kiriting');
@@ -126,23 +115,14 @@ export default function MashinalarPage() {
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/mashinalar', {
-                method: 'PUT',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    id: editMashina.id,
-                    moshina_nomeri: editMashina.moshina_nomeri
-                }),
+            const { updateInFile } = await import('@/lib/json-utils');
+            const updatedMashina = await updateInFile('moshinalar.json', editMashina.id, {
+                moshina_nomeri: editMashina.moshina_nomeri
             });
 
-            if (!response.ok) throw new Error('Mashinani yangilashda xatolik');
-
-            const updatedMashina: Mashina = await response.json();
             const formattedMashina: FormattedMashina = {
                 ...updatedMashina,
-                formattedDate: new Date(updatedMashina.createdAt).toLocaleDateString('uz-UZ')
+                formattedDate: new Date(updatedMashina.created_at).toLocaleDateString('uz-UZ')
             };
 
             setMashinalar(prev =>
@@ -152,36 +132,28 @@ export default function MashinalarPage() {
             setEditMashina(null);
             setError('');
             setIsEditDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Mashinani yangilashda xatolik');
+            setError(error.message || 'Mashinani yangilashda xatolik');
         } finally {
             setActionLoading(false);
         }
     };
 
-    // DELETE - Mashinani o'chirish
+    // DELETE - Mashinani o'chirish - YANGILANDI
     const handleDeleteCar = async () => {
         if (!deleteMashina) return;
 
         setActionLoading(true);
         try {
-            const response = await fetch('/api/mashinalar', {
-                method: 'DELETE',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ id: deleteMashina.id }),
-            });
-
-            if (!response.ok) throw new Error('Mashinani o\'chirishda xatolik');
+            await deleteFromFile('moshinalar.json', deleteMashina.id);
 
             setMashinalar(prev => prev.filter(m => m.id !== deleteMashina.id));
             setDeleteMashina(null);
             setIsDeleteDialogOpen(false);
-        } catch (error) {
+        } catch (error: any) {
             console.error('Xatolik:', error);
-            setError('Mashinani o\'chirishda xatolik');
+            setError(error.message || 'Mashinani o\'chirishda xatolik');
         } finally {
             setActionLoading(false);
         }
@@ -256,7 +228,6 @@ export default function MashinalarPage() {
                                         setError('');
                                     }}
                                     className={error ? 'border-red-500' : ''}
-
                                     onKeyDown={(e) => {
                                         if (e.key === 'Enter' && newCarNumber.trim()) {
                                             e.preventDefault();
@@ -325,11 +296,10 @@ export default function MashinalarPage() {
                                     }
                                 }}
                                 className={error ? 'border-red-500' : ''}
-
                                 onKeyDown={(e) => {
-                                    if (e.key === 'Enter' && newCarNumber.trim()) {
+                                    if (e.key === 'Enter' && editMashina?.moshina_nomeri.trim()) {
                                         e.preventDefault();
-                                        handleAddCar();
+                                        handleEditCar();
                                     }
                                 }}
                             />
