@@ -57,8 +57,6 @@ export default function TamirlashPage() {
     const [searchTerm, setSearchTerm] = useState('');
     const [zapchastSearchTerm, setZapchastSearchTerm] = useState('');
 
-
-
     const filteredOrders = orders.filter(order =>
         order.moshina_nomeri.toLowerCase().includes(searchTerm.toLowerCase()) &&
         order.zapchast_kod.toLowerCase().includes(zapchastSearchTerm.toLowerCase())
@@ -643,65 +641,63 @@ export default function TamirlashPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {orders.length === 0 ? (
+                            {filteredOrders.length === 0 ? (
                                 <TableRow>
                                     <TableCell colSpan={7} className="text-center py-8 text-muted-foreground text-base">
-                                        Hozircha buyurtmalar mavjud emas
+                                        {searchTerm || zapchastSearchTerm ? 'Hech narsa topilmadi' : 'Hozircha buyurtmalar mavjud emas'}
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                orders
-                                    .filter(order => order.moshina_nomeri.toLowerCase().includes(searchTerm.toLowerCase()))
-                                    .map((order) => (
-                                        <TableRow key={order.id} className="hover:bg-gray-50">
-                                            <TableCell className="font-medium py-3 text-base">{order.id}</TableCell>
-                                            <TableCell className="font-semibold py-3 text-base">{order.moshina_nomeri}</TableCell>
-                                            <TableCell className="py-3 text-base">
-                                                <div className="max-w-xs" title={order.description}>
-                                                    {order.description}
+                                filteredOrders.map((order) => (
+                                    <TableRow key={order.id} className="hover:bg-gray-50">
+                                        <TableCell className="font-medium py-3 text-base">{order.id}</TableCell>
+                                        <TableCell className="font-semibold py-3 text-base">{order.moshina_nomeri}</TableCell>
+                                        <TableCell className="py-3 text-base">
+                                            <div className="max-w-xs" title={order.description}>
+                                                {order.description}
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3 text-base">
+                                            {order.usta_haqi ? `$${order.usta_haqi}` : '-'}
+                                        </TableCell>
+                                        <TableCell className="py-3 text-base">
+                                            <div>
+                                                <div className="font-medium">{order.zapchast_kod}</div>
+                                                <div className="text-sm text-gray-500">
+                                                    {getZapchastNomi(order.zapchast_kod)}
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="py-3 text-base">
-                                                {order.usta_haqi ? `$${order.usta_haqi}` : '-'}
-                                            </TableCell>
-                                            <TableCell className="py-3 text-base">
-                                                <div>
-                                                    <div className="font-medium">{order.zapchast_kod}</div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {getZapchastNomi(order.zapchast_kod)}
-                                                    </div>
-                                                    <div className="text-sm text-gray-500">
-                                                        {order.zapchast_soni} ta
-                                                    </div>
+                                                <div className="text-sm text-gray-500">
+                                                    {order.zapchast_soni} ta
                                                 </div>
-                                            </TableCell>
-                                            <TableCell className="py-3 text-base">
-                                                {new Date(order.sanasi).toLocaleDateString('uz-UZ')}
-                                            </TableCell>
-                                            <TableCell className="py-3">
-                                                <div className="flex space-x-2">
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-9 w-9 p-0"
-                                                        onClick={() => startEdit(order)}
-                                                        disabled={actionLoading}
-                                                    >
-                                                        <Edit className="h-4 w-4" />
-                                                    </Button>
-                                                    <Button
-                                                        variant="outline"
-                                                        size="sm"
-                                                        className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                        onClick={() => startDelete(order)}
-                                                        disabled={actionLoading}
-                                                    >
-                                                        <Trash2 className="h-4 w-4" />
-                                                    </Button>
-                                                </div>
-                                            </TableCell>
-                                        </TableRow>
-                                    ))
+                                            </div>
+                                        </TableCell>
+                                        <TableCell className="py-3 text-base">
+                                            {new Date(order.sanasi).toLocaleDateString('uz-UZ')}
+                                        </TableCell>
+                                        <TableCell className="py-3">
+                                            <div className="flex space-x-2">
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-9 w-9 p-0"
+                                                    onClick={() => startEdit(order)}
+                                                    disabled={actionLoading}
+                                                >
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button
+                                                    variant="outline"
+                                                    size="sm"
+                                                    className="h-9 w-9 p-0 text-red-600 hover:text-red-700 hover:bg-red-50"
+                                                    onClick={() => startDelete(order)}
+                                                    disabled={actionLoading}
+                                                >
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))
                             )}
                         </TableBody>
                     </Table>
