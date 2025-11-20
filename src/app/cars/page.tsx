@@ -256,6 +256,13 @@ export default function MashinalarPage() {
                                         setError('');
                                     }}
                                     className={error ? 'border-red-500' : ''}
+
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && newCarNumber.trim()) {
+                                            e.preventDefault();
+                                            handleAddCar();
+                                        }
+                                    }}
                                 />
                                 {error && (
                                     <div className="flex items-center gap-2 text-red-600 text-sm">
@@ -318,6 +325,13 @@ export default function MashinalarPage() {
                                     }
                                 }}
                                 className={error ? 'border-red-500' : ''}
+
+                                onKeyDown={(e) => {
+                                    if (e.key === 'Enter' && newCarNumber.trim()) {
+                                        e.preventDefault();
+                                        handleAddCar();
+                                    }
+                                }}
                             />
                             {error && (
                                 <div className="flex items-center gap-2 text-red-600 text-sm">

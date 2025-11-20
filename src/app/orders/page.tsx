@@ -286,13 +286,184 @@ export default function TamirlashPage() {
                             </DialogDescription>
                         </DialogHeader>
 
+                        <form onSubmit={(e) => {
+                            e.preventDefault();
+                            createOrder();
+                        }}>
+                            <div className="grid gap-4 py-4">
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    {/* Mashina raqami */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="moshina_nomeri">Mashina raqami *</Label>
+                                        <select
+                                            id="moshina_nomeri"
+                                            value={formData.moshina_nomeri}
+                                            onChange={(e) => setFormData({ ...formData, moshina_nomeri: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                            required
+                                        >
+                                            <option value="">Mashina tanlang</option>
+                                            {mashinalar.map((mashina) => (
+                                                <option key={mashina.id} value={mashina.moshina_nomeri}>
+                                                    {mashina.moshina_nomeri}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Zapchast kodi */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="zapchast_kod">Zapchast kodi</Label>
+                                        <select
+                                            id="zapchast_kod"
+                                            value={formData.zapchast_kod}
+                                            onChange={(e) => setFormData({ ...formData, zapchast_kod: e.target.value })}
+                                            className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        >
+                                            <option value="">Zapchast tanlang</option>
+                                            {zapchastlar.map((zapchast) => (
+                                                <option key={zapchast.id} value={zapchast.kod}>
+                                                    {zapchast.kod} - {zapchast.nomi}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
+                                    {/* Usta haqi */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="usta_haqi">Usta haqi ($)</Label>
+                                        <Input
+                                            id="usta_haqi"
+                                            type="number"
+                                            step="0.01"
+                                            placeholder="0.00"
+                                            value={formData.usta_haqi}
+                                            onChange={(e) => setFormData({ ...formData, usta_haqi: e.target.value })}
+                                            className="w-full"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                    e.preventDefault();
+                                                    createOrder();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Zapchast soni */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="zapchast_soni">Zapchast soni</Label>
+                                        <Input
+                                            id="zapchast_soni"
+                                            type="number"
+                                            placeholder="0"
+                                            value={formData.zapchast_soni}
+                                            onChange={(e) => setFormData({ ...formData, zapchast_soni: e.target.value })}
+                                            className="w-full"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                    e.preventDefault();
+                                                    createOrder();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+
+                                    {/* Sana */}
+                                    <div className="grid gap-2">
+                                        <Label htmlFor="sanasi">Sana</Label>
+                                        <Input
+                                            id="sanasi"
+                                            type="date"
+                                            value={formData.sanasi}
+                                            onChange={(e) => setFormData({ ...formData, sanasi: e.target.value })}
+                                            className="w-full"
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                    e.preventDefault();
+                                                    createOrder();
+                                                }
+                                            }}
+                                        />
+                                    </div>
+                                </div>
+
+                                {/* Tavsif */}
+                                <div className="grid gap-2">
+                                    <Label htmlFor="description">Tavsif *</Label>
+                                    <textarea
+                                        id="description"
+                                        placeholder="Ish tavsifini yozing..."
+                                        value={formData.description}
+                                        onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                                        rows={3}
+                                        className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                        required
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && !e.shiftKey && formData.moshina_nomeri && formData.description) {
+                                                e.preventDefault();
+                                                createOrder();
+                                            }
+                                        }}
+                                    />
+                                </div>
+
+                                {error && (
+                                    <div className="flex items-center gap-2 text-red-600 text-sm">
+                                        <AlertCircle className="h-4 w-4" />
+                                        {error}
+                                    </div>
+                                )}
+                            </div>
+
+                            <DialogFooter>
+                                <Button
+                                    type="button"
+                                    variant="outline"
+                                    onClick={() => setIsAddDialogOpen(false)}
+                                    disabled={actionLoading}
+                                >
+                                    Bekor qilish
+                                </Button>
+                                <Button
+                                    type="submit" // type ni "submit" qilish
+                                    disabled={!formData.moshina_nomeri || !formData.description || actionLoading}
+                                >
+                                    {actionLoading ? (
+                                        <>
+                                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                            Qo'shilmoqda...
+                                        </>
+                                    ) : (
+                                        'Qo\'shish'
+                                    )}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    </DialogContent>
+                </Dialog>
+            </div>
+
+            {/* Tahrirlash dialogi */}
+            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>Buyurtmani Tahrirlash</DialogTitle>
+                        <DialogDescription>
+                            Buyurtma ma'lumotlarini o'zgartiring.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <form onSubmit={(e) => {
+                        e.preventDefault();
+                        updateOrder(editingId!);
+                    }}>
                         <div className="grid gap-4 py-4">
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 {/* Mashina raqami */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="moshina_nomeri">Mashina raqami *</Label>
+                                    <Label htmlFor="edit_moshina_nomeri">Mashina raqami *</Label>
                                     <select
-                                        id="moshina_nomeri"
+                                        id="edit_moshina_nomeri"
                                         value={formData.moshina_nomeri}
                                         onChange={(e) => setFormData({ ...formData, moshina_nomeri: e.target.value })}
                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -309,9 +480,9 @@ export default function TamirlashPage() {
 
                                 {/* Zapchast kodi */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="zapchast_kod">Zapchast kodi</Label>
+                                    <Label htmlFor="edit_zapchast_kod">Zapchast kodi</Label>
                                     <select
-                                        id="zapchast_kod"
+                                        id="edit_zapchast_kod"
                                         value={formData.zapchast_kod}
                                         onChange={(e) => setFormData({ ...formData, zapchast_kod: e.target.value })}
                                         className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -327,55 +498,79 @@ export default function TamirlashPage() {
 
                                 {/* Usta haqi */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="usta_haqi">Usta haqi ($)</Label>
+                                    <Label htmlFor="edit_usta_haqi">Usta haqi ($)</Label>
                                     <Input
-                                        id="usta_haqi"
+                                        id="edit_usta_haqi"
                                         type="number"
                                         step="0.01"
                                         placeholder="0.00"
                                         value={formData.usta_haqi}
                                         onChange={(e) => setFormData({ ...formData, usta_haqi: e.target.value })}
                                         className="w-full"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                e.preventDefault();
+                                                updateOrder(editingId!);
+                                            }
+                                        }}
                                     />
                                 </div>
 
                                 {/* Zapchast soni */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="zapchast_soni">Zapchast soni</Label>
+                                    <Label htmlFor="edit_zapchast_soni">Zapchast soni</Label>
                                     <Input
-                                        id="zapchast_soni"
+                                        id="edit_zapchast_soni"
                                         type="number"
                                         placeholder="0"
                                         value={formData.zapchast_soni}
                                         onChange={(e) => setFormData({ ...formData, zapchast_soni: e.target.value })}
                                         className="w-full"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                e.preventDefault();
+                                                updateOrder(editingId!);
+                                            }
+                                        }}
                                     />
                                 </div>
 
                                 {/* Sana */}
                                 <div className="grid gap-2">
-                                    <Label htmlFor="sanasi">Sana</Label>
+                                    <Label htmlFor="edit_sanasi">Sana</Label>
                                     <Input
-                                        id="sanasi"
+                                        id="edit_sanasi"
                                         type="date"
                                         value={formData.sanasi}
                                         onChange={(e) => setFormData({ ...formData, sanasi: e.target.value })}
                                         className="w-full"
+                                        onKeyDown={(e) => {
+                                            if (e.key === 'Enter' && formData.moshina_nomeri && formData.description) {
+                                                e.preventDefault();
+                                                updateOrder(editingId!);
+                                            }
+                                        }}
                                     />
                                 </div>
                             </div>
 
                             {/* Tavsif */}
                             <div className="grid gap-2">
-                                <Label htmlFor="description">Tavsif *</Label>
+                                <Label htmlFor="edit_description">Tavsif *</Label>
                                 <textarea
-                                    id="description"
+                                    id="edit_description"
                                     placeholder="Ish tavsifini yozing..."
                                     value={formData.description}
                                     onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                                     rows={3}
                                     className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     required
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter' && !e.shiftKey && formData.moshina_nomeri && formData.description) {
+                                            e.preventDefault();
+                                            updateOrder(editingId!);
+                                        }
+                                    }}
                                 />
                             </div>
 
@@ -391,165 +586,26 @@ export default function TamirlashPage() {
                             <Button
                                 type="button"
                                 variant="outline"
-                                onClick={() => setIsAddDialogOpen(false)}
+                                onClick={() => setIsEditDialogOpen(false)}
                                 disabled={actionLoading}
                             >
                                 Bekor qilish
                             </Button>
                             <Button
-                                type="button"
-                                onClick={createOrder}
+                                type="submit" // type ni "submit" qilish
                                 disabled={!formData.moshina_nomeri || !formData.description || actionLoading}
                             >
                                 {actionLoading ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Qo'shilmoqda...
+                                        Yangilanmoqda...
                                     </>
                                 ) : (
-                                    'Qo\'shish'
+                                    'Saqlash'
                                 )}
                             </Button>
                         </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
-
-            {/* Tahrirlash dialogi */}
-            <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                <DialogContent className="sm:max-w-2xl">
-                    <DialogHeader>
-                        <DialogTitle>Buyurtmani Tahrirlash</DialogTitle>
-                        <DialogDescription>
-                            Buyurtma ma'lumotlarini o'zgartiring.
-                        </DialogDescription>
-                    </DialogHeader>
-
-                    <div className="grid gap-4 py-4">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {/* Mashina raqami */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit_moshina_nomeri">Mashina raqami *</Label>
-                                <select
-                                    id="edit_moshina_nomeri"
-                                    value={formData.moshina_nomeri}
-                                    onChange={(e) => setFormData({ ...formData, moshina_nomeri: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    required
-                                >
-                                    <option value="">Mashina tanlang</option>
-                                    {mashinalar.map((mashina) => (
-                                        <option key={mashina.id} value={mashina.moshina_nomeri}>
-                                            {mashina.moshina_nomeri}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Zapchast kodi */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit_zapchast_kod">Zapchast kodi</Label>
-                                <select
-                                    id="edit_zapchast_kod"
-                                    value={formData.zapchast_kod}
-                                    onChange={(e) => setFormData({ ...formData, zapchast_kod: e.target.value })}
-                                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                >
-                                    <option value="">Zapchast tanlang</option>
-                                    {zapchastlar.map((zapchast) => (
-                                        <option key={zapchast.id} value={zapchast.kod}>
-                                            {zapchast.kod} - {zapchast.nomi}
-                                        </option>
-                                    ))}
-                                </select>
-                            </div>
-
-                            {/* Usta haqi */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit_usta_haqi">Usta haqi ($)</Label>
-                                <Input
-                                    id="edit_usta_haqi"
-                                    type="number"
-                                    step="0.01"
-                                    placeholder="0.00"
-                                    value={formData.usta_haqi}
-                                    onChange={(e) => setFormData({ ...formData, usta_haqi: e.target.value })}
-                                    className="w-full"
-                                />
-                            </div>
-
-                            {/* Zapchast soni */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit_zapchast_soni">Zapchast soni</Label>
-                                <Input
-                                    id="edit_zapchast_soni"
-                                    type="number"
-                                    placeholder="0"
-                                    value={formData.zapchast_soni}
-                                    onChange={(e) => setFormData({ ...formData, zapchast_soni: e.target.value })}
-                                    className="w-full"
-                                />
-                            </div>
-
-                            {/* Sana */}
-                            <div className="grid gap-2">
-                                <Label htmlFor="edit_sanasi">Sana</Label>
-                                <Input
-                                    id="edit_sanasi"
-                                    type="date"
-                                    value={formData.sanasi}
-                                    onChange={(e) => setFormData({ ...formData, sanasi: e.target.value })}
-                                    className="w-full"
-                                />
-                            </div>
-                        </div>
-
-                        {/* Tavsif */}
-                        <div className="grid gap-2">
-                            <Label htmlFor="edit_description">Tavsif *</Label>
-                            <textarea
-                                id="edit_description"
-                                placeholder="Ish tavsifini yozing..."
-                                value={formData.description}
-                                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                                rows={3}
-                                className="w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                required
-                            />
-                        </div>
-
-                        {error && (
-                            <div className="flex items-center gap-2 text-red-600 text-sm">
-                                <AlertCircle className="h-4 w-4" />
-                                {error}
-                            </div>
-                        )}
-                    </div>
-
-                    <DialogFooter>
-                        <Button
-                            type="button"
-                            variant="outline"
-                            onClick={() => setIsEditDialogOpen(false)}
-                            disabled={actionLoading}
-                        >
-                            Bekor qilish
-                        </Button>
-                        <Button
-                            type="button"
-                            onClick={() => updateOrder(editingId!)}
-                            disabled={!formData.moshina_nomeri || !formData.description || actionLoading}
-                        >
-                            {actionLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Yangilanmoqda...
-                                </>
-                            ) : (
-                                'Saqlash'
-                            )}
-                        </Button>
-                    </DialogFooter>
+                    </form>
                 </DialogContent>
             </Dialog>
 

@@ -1,10 +1,63 @@
 [
   {
     "id": 1,
-    "nomi": "qwert",
+    "nomi": "qwe",
     "kod": "1234",
-    "soni": 2,
+    "soni": 5,
     "narxi": 15,
     "kelgan_sanasi": "2025-11-20"
+  },
+  {
+    "id": 2,
+    "nomi": "test",
+    "kod": "1234213",
+    "soni": 12,
+    "narxi": 12,
+    "kelgan_sanasi": "2021-12-12"
+  },
+  {
+    "nomi": "demo",
+    "kod": "9090",
+    "soni": 2,
+    "narxi": 20,
+    "kelgan_sanasi": "2022-12-12",
+    "id": 3,
+    "createdAt": "2025-11-20T16:59:53.051Z"
+  },
+  {
+    "nomi": "balon",
+    "kod": "0101",
+    "soni": 1,
+    "narxi": 30,
+    "kelgan_sanasi": "2025-11-20",
+    "id": 4,
+    "createdAt": "2025-11-20T17:00:22.570Z"
+  },
+  {
+    "nomi": "oyna",
+    "kod": "4545",
+    "soni": 2,
+    "narxi": 100,
+    "kelgan_sanasi": "2025-11-20",
+    "id": 5,
+    "createdAt": "2025-11-20T17:01:07.971Z"
+  },
+  {
+    "nomi": "nasos",
+    "kod": "3232",
+    "soni": 3,
+    "narxi": 33.33,
+    "kelgan_sanasi": "2025-11-20",
+    "id": 6,
+    "createdAt": "2025-11-20T17:01:40.935Z"
+  },
+  {
+    "nomi": "nmadir",
+    "kod": "1010",
+    "soni": 1,
+    "narxi": 22,
+    "kelgan_sanasi": "2025-11-20",
+    "id": 7,
+    "createdAt": "2025-11-20T17:02:16.312Z"
   }
 ]
